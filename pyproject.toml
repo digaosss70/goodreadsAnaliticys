@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "gooreadsanaliticys"
+version = "0.1.0"
+description = "pipeline to ETL information of user in goodreads"
+authors = ["rodrigo ubuntu <digaosss70@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+duckdb = "^0.10.0"
+sqlalchemy = "^2.0.28"
+python-dotenv = "^1.0.1"
+pandas = "^2.2.1"
+lxml = "^5.1.0"
+html5lib = "^1.1"
+beautifulsoup4 = "^4.12.3"
+requests = "^2.31.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
