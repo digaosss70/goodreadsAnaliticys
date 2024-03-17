@@ -2,6 +2,13 @@ from bs4 import BeautifulSoup
 import re
 import requests
 from datetime import datetime
+from dotenv import load_dotenv
+from sqlalchemy import create_engine,text
+import os
+import pandas as pd
+
+# Carrega as variáveis de ambiente
+load_dotenv()
 
 meses = {
     'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -23,25 +30,27 @@ def getData(txt):
     else:
         return 'not set'
 
+def getLivrosFisicos():
+    url_fisico = "https://www.goodreads.com/review/list/90257929?shelf=biblioteca-fisica&page="
+    page = 1
 
-url_fisico = "https://www.goodreads.com/review/list/90257929?shelf=biblioteca-fisica&page="
-page = 1
+    biblioteca_ficica=[]
+    while True:
+        html = requests.get(url_fisico+str(page)).content
+        soup = BeautifulSoup(html, 'html.parser')
+        html_table = soup.select("#booksBody > tr")
 
-biblioteca_ficica=[]
-while True:
-    html = requests.get(url_fisico+str(page)).content
-    soup = BeautifulSoup(html, 'html.parser')
-    html_table = soup.select("#booksBody > tr")
-
-    if html_table:
-        page=page+1
-        for l in html_table:
-            biblioteca_ficica.append(l['id'])
-    else:
-        break
+        if html_table:
+            page=page+1
+            for l in html_table:
+                biblioteca_ficica.append(l['id'])
+        else:
+            break
+    return biblioteca_ficica
           
-
-def getAll():   
+def getAll():
+    df = pd.DataFrame()
+    listaLivrosfisicos = getLivrosFisicos()
     url_all = "https://www.goodreads.com/review/list/90257929?shelf=%23ALL%23&page="
     page = 1
 
@@ -103,7 +112,7 @@ def getAll():
                     tra_num_colecao = "na"
 
                 #verifica se livro é fisico ou kindle
-                if ext_linha in biblioteca_ficica:
+                if ext_linha in listaLivrosfisicos:
                     tra_tipo = 'Fisico'
                 else:
                     tra_tipo = 'kindle'
@@ -118,14 +127,33 @@ def getAll():
                         tra_categoria = 'Lendo'
                     else:
                         tra_categoria = 'Quero Ler'
+                    
 
+                    data = [{'title': ext_title, 'category': tra_categoria, 'type': tra_tipo}]
+                    df = pd.concat([df, pd.DataFrame.from_dict(data)], ignore_index=True)
                     ic=ic+1
       
         else:
             break
- 
-        
-getAll()
+
+    print(df.head())  
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    engine = create_engine(DATABASE_URL)
+    df.to_sql('goodreads', con=engine, if_exists='replace', index=False)
+
+def teste():
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    engine = create_engine(DATABASE_URL)    
+    with engine.connect() as conn:
+    # Follow the identifier quoting convention for your RDBMS
+    # to avoid problems with mixed-case names.
+        conn.execute(text("""
+                      DROP TABLE "goodreads" 
+                      """))
+        # Commit if necessary
+        conn.commit()    
+
+#getAll()
 #ext_title
 #ext_colecao_geral
 #ext_colecao
@@ -141,4 +169,5 @@ getAll()
 #tra_categoria
 
 if __name__ == "__main__":
-    getAll()
+    #getAll()
+    teste()
