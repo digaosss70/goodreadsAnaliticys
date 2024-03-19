@@ -224,7 +224,7 @@ def getAll():
 
     query = insert[:-1]+";"
     engine = postgreesql()
-    insert_date = datetime.now().strftime('%Y-%m-%d')
+    insert_date = datetime.now().strftime('%Y-%m-%d')git
     insert_time = datetime.now().strftime('%H:%M:%S')
 
     with engine.connect() as conn:
