@@ -19,6 +19,9 @@ Esta tabela é uma dimensão que contém os tipos de livro. A chave é id_type e
 - 1: Biblioteca Física (Criei uma shelve (no goodreads) para listar meus livros de minha biblioteca física env=URL_FISICOS)
 - 2: Kindle (tudo aquilo que não está na biblioteca física)
 
+### Tabela 4: log_insert (Tabela Fato)
+Esta tabela é responsável por armazenar registros de data, hora e quantidade. Ela mantém sempre a última informação gerada para cada data. Se houver múltiplas execuções no mesmo dia, apenas a última será mantida.
+
 ## Referências
 - [Goodreads](https://www.goodreads.com/)
 - [PostgreSQL](https://www.postgresql.org/)
