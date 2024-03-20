@@ -45,7 +45,8 @@ def iniciaTabelas():
                                 added date,
                                 read date,
                                 start date,
-                                pub_year int
+                                pub_year int,
+                                reading_progress int
                             ); 
                       """))
         #Cria tabela dimensão tipo (kindle, biblioteca fisica) e inseri dimensões
@@ -113,12 +114,45 @@ def getLivrosFisicos():
         else:
             break
     return biblioteca_ficica
-          
+
+def getProgresso():
+    url_lendo = os.getenv("URL_USER")
+
+    html =  requests.get(url_lendo).content 
+    soup = BeautifulSoup(html, 'html.parser')
+    lista = soup.select("div.secondcol")
+    progressos = []
+
+    if lista:
+        for l in lista:
+            p_title = f"{re.search(">(.*?)</a>",str(l.select("a.bookTitle"))).group(1).replace("'","")}"
+            p_progr = re.search(">(.*?)</a>",str(l.select("a.greyText.smallText"))).group(1)
+
+            p_progr_perc = re.findall("\\((.*?)%\\)",p_progr)
+
+            if p_progr_perc:
+                percent_progress = int( p_progr_perc[0])
+            else:
+                p_atual = int(re.search("page (.*?) of",p_progr).group(1))
+                p_total = int(re.search("of (.*?)\\)",p_progr).group(1))
+                percent_progress = int(p_atual/p_total*100)
+
+            progressos.append([p_title,percent_progress])
+    
+    return progressos
+
+def encontrar_valor_por_chave(chave, array):
+    for subarray in array:
+        if subarray[0] == chave:
+            return subarray[1]
+    return 'null'  # Retornar None se a chave não for encontrada
+       
 def getAll():
     iniciaTabelas()
+    get_progresso = getProgresso()
     contador = 0
     engine = postgreesql()    
-    insert = "insert  into  goodreads  (title, colection, seq_colection,id_category,id_type,author,pages,id_rating,added,read,start,pub_year) values "
+    insert = "insert  into  goodreads  (title, colection, seq_colection,id_category,id_type,author,pages,id_rating,added,read,start,pub_year,reading_progress) values "
     listaLivrosfisicos = getLivrosFisicos()
     url_all = os.getenv("URL_ALL")
     page = 1
@@ -189,11 +223,13 @@ def getAll():
                 #for para mais de 1 litura em um mesmo livro
                 ic=0
                 for lista in list_started:
-
+                    
+                    progress = 'null'
                     if getData(list_read[ic]) != 'null':
                         tra_categoria = 1 #'Lido'
                     elif getData(lista) != 'null':
                         tra_categoria = 2 #'Lendo'
+                        progress = encontrar_valor_por_chave(ext_title,get_progresso)
                     else:
                         tra_categoria = 3#'Quero Ler'
                     
@@ -213,7 +249,7 @@ def getAll():
                     else:
                         load_start ='null'
 
-                    query = f"('{ext_title}',{ext_colecao},{tra_num_colecao},{tra_categoria},{tra_tipo},'{ext_author}',{tra_pages},{tra_rating},{load_added},{load_read},{load_start},{tra_pub}),"
+                    query = f"('{ext_title}',{ext_colecao},{tra_num_colecao},{tra_categoria},{tra_tipo},'{ext_author}',{tra_pages},{tra_rating},{load_added},{load_read},{load_start},{tra_pub},{progress}),"
                     insert = insert + query
                     
                     ic=ic+1
