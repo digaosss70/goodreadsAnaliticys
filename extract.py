@@ -46,7 +46,7 @@ def iniciaTabelas():
                                 read date,
                                 start date,
                                 pub_year int,
-                                reading_progress int
+                                reading_progress_percent int
                             ); 
                       """))
         #Cria tabela dimensão tipo (kindle, biblioteca fisica) e inseri dimensões
@@ -103,7 +103,7 @@ def getLivrosFisicos():
 
     biblioteca_ficica=[]
     while True:
-        html = requests.get(url_fisico+str(page)).content
+        html = requests.get(url_fisico+"&page="+str(page)).content
         soup = BeautifulSoup(html, 'html.parser')
         html_table = soup.select("#booksBody > tr")
 
@@ -152,13 +152,13 @@ def getAll():
     get_progresso = getProgresso()
     contador = 0
     engine = postgreesql()    
-    insert = "insert  into  goodreads  (title, colection, seq_colection,id_category,id_type,author,pages,id_rating,added,read,start,pub_year,reading_progress) values "
+    insert = "insert  into  goodreads  (title, colection, seq_colection,id_category,id_type,author,pages,id_rating,added,read,start,pub_year,reading_progress_percent) values "
     listaLivrosfisicos = getLivrosFisicos()
     url_all = os.getenv("URL_ALL")
     page = 1
 
     while True:
-        html = requests.get(url_all+str(page)).content
+        html = requests.get(url_all+"&page="+str(page)).content
         soup = BeautifulSoup(html, 'html.parser')
 
         html_table = soup.select("#booksBody > tr")
