@@ -1,0 +1,43 @@
+criar pasta
+	mkdir nome_pasta
+	cd nome_pasta
+	
+criar repositorio no git
+	copiar comando e executa
+	
+abre visual_studio
+
+pyenv local 3.12.1
+	define versão do python
+
+poetry init 
+	cria ambiente virtual
+	
+poetry env use 3.12.1	
+	
+poetry shell
+
+poetry add gdown
+poetry add duckdb
+poetry add streamlit
+poetry add psycopg2-binary
+poetry add python-dotenv
+poetry add psycopg2
+poetry add sqlalchemy
+
+git add .
+git commit -m "meu commit"
+git push
+
+=========== DOCKER ========================
+sudo usermod -aG docker $USER
+git clone https://github.com/seuusuario/seurepositorio.git
+cd seurepositorio
+sudo docker build -t nomedaimagem .
+
+sudo docker images
+sudo docker run -d -p 8501:8501 goodreadsanalitcys
+http://192.168.0.128:8501/
+
+
+

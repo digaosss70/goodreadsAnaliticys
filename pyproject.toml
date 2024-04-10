@@ -17,6 +17,7 @@ beautifulsoup4 = "^4.12.3"
 requests = "^2.31.0"
 psycopg2 = "^2.9.9"
 streamlit = "^1.32.2"
+psycopg2-binary = "^2.9.9"
 
 
 [build-system]
