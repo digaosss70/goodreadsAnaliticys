@@ -7,6 +7,9 @@ from sqlalchemy import create_engine,text
 import os
 import pandas as pd
 
+user_agent = "MyWebScraper/1.0 (+https://github.com/digaosss70/goodreadsAnaliticys)"
+headers = {"User-Agent": user_agent}
+
 # Carrega as variáveis de ambiente
 load_dotenv()
 
@@ -103,7 +106,7 @@ def getLivrosFisicos():
 
     biblioteca_ficica=[]
     while True:
-        html = requests.get(url_fisico+"&page="+str(page)).content
+        html = requests.get(url_fisico+"&page="+str(page), headers=headers).content
         soup = BeautifulSoup(html, 'html.parser')
         html_table = soup.select("#booksBody > tr")
 
@@ -118,11 +121,10 @@ def getLivrosFisicos():
 def getProgresso():
     url_lendo = os.getenv("URL_USER")
 
-    html =  requests.get(url_lendo).content 
+    html =  requests.get(url_lendo, headers=headers).content 
     soup = BeautifulSoup(html, 'html.parser')
     lista = soup.select("div.secondcol")
     progressos = []
-
     if lista:
         for l in lista:
             p_title = f"{re.search(">(.*?)</a>",str(l.select("a.bookTitle"))).group(1).replace("'","")}"
@@ -156,19 +158,21 @@ def getAll():
     listaLivrosfisicos = getLivrosFisicos()
     url_all = os.getenv("URL_ALL")
     page = 1
-
+    
     while True:
-        html = requests.get(url_all+"&page="+str(page)).content
+        html = requests.get(url_all+"&page="+str(page), headers=headers).content
         soup = BeautifulSoup(html, 'html.parser')
-
         html_table = soup.select("#booksBody > tr")
 
         if html_table:
             page=page+1
+            
             for l in html_table:
                 ext_linha = l['id']
                 ext_title =  f"{l.select("td.field.title > div > a ")[0]['title'].replace("'","")}"
-                ext_colecao_geral = re.findall("\\((.*?)\\)", ext_title)
+                
+                ext_colecao_geral = re.findall("\\((.*?)\\)", ext_title.replace("(Portuguese Edition)","").replace(", #","").replace("#","").replace("(Em Portugues do Brasil)","") )
+                
                 ext_author = f"{re.search(">(.*?)</a>",  str( l.select("td.field.author > div > a"))).group(1).replace("'","")}"
                 ext_pages =  re.findall("([,0-9]{1,5})",str( l.select("td.field.num_pages > div > nobr")))
                 ext_pub =  re.findall("([0-9]{4})",str( l.select("td.field.date_pub > div ")[0]))
@@ -204,7 +208,8 @@ def getAll():
 
                 #Extraindo do titulo a coleção e numero da sequencia
                 if ext_colecao_geral:
-                    ext_colecao= f"'{re.sub("[0-9]","",ext_colecao_geral[0])}'"
+                    ext_colecao_geral_aux = re.sub(r" Livro\s[0-9]{0,9}", "", ext_colecao_geral[0])
+                    ext_colecao= f"'{re.sub("[0-9]","",ext_colecao_geral_aux)}'"
                     ext_num_colecao = re.findall("([0-9]{1,2})",ext_colecao_geral[0])
                     if ext_num_colecao:
                         tra_num_colecao = ext_num_colecao[0]
@@ -251,6 +256,7 @@ def getAll():
 
                     query = f"('{ext_title}',{ext_colecao},{tra_num_colecao},{tra_categoria},{tra_tipo},'{ext_author}',{tra_pages},{tra_rating},{load_added},{load_read},{load_start},{tra_pub},{progress}),"
                     insert = insert + query
+
                     
                     ic=ic+1
                     contador=contador+1
@@ -263,10 +269,11 @@ def getAll():
     insert_date = datetime.now().strftime('%Y-%m-%d')
     insert_time = datetime.now().strftime('%H:%M:%S')
 
+    
     with engine.connect() as conn:
-        conn.execute(text(query))
-        conn.execute(text(f"INSERT INTO log_insert (insert_date,insert_time, insert_qtd) VALUES ('{insert_date}','{insert_time}', {contador}) ON CONFLICT (insert_date) DO UPDATE SET insert_qtd = EXCLUDED.insert_qtd , insert_time = EXCLUDED.insert_time;"))
-        conn.commit()
+         conn.execute(text(query))
+         conn.execute(text(f"INSERT INTO log_insert (insert_date,insert_time, insert_qtd) VALUES ('{insert_date}','{insert_time}', {contador}) ON CONFLICT (insert_date) DO UPDATE SET insert_qtd = EXCLUDED.insert_qtd , insert_time = EXCLUDED.insert_time;"))
+         conn.commit()
 
     return f"Em {insert_date} as {insert_time} foram inseridos {contador} Registros!"
 
